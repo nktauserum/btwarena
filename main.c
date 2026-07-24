@@ -42,7 +42,8 @@ void pool_put(Pool* pool, void* ptr) {
 }
 
 int main(void) {
-    Pool pool = { .available = 0 };
+    Pool pool = {0};
+    pool_init(&pool);
 
     void* ptr = pool_get(&pool);
     strcpy(ptr, "Hello World!");
