@@ -4,18 +4,19 @@
 #include <string.h>
 
 #define POOL_CAPACITY 16
-#define BUFFER_SIZE 1024
 
 typedef struct {
     void* ptrs[POOL_CAPACITY];
     size_t available;
+    size_t buffer_size;
 } Pool;
 
-void pool_init(Pool* pool) {
+void pool_init(Pool* pool, size_t buffer_size) {
     pool->available = 0;
+    pool->buffer_size = buffer_size;
 
     for (int i = 0; i < POOL_CAPACITY; ++i) {
-        void* buf = malloc(BUFFER_SIZE);
+        void* buf = malloc(pool->buffer_size);
         if (buf) {
             pool->ptrs[pool->available++] = buf;
         }
@@ -34,12 +35,12 @@ void* pool_get(Pool* pool) {
         return ptr;
     }
 
-    return malloc(BUFFER_SIZE);
+    return malloc(pool->buffer_size);
 }
 
 void pool_put(Pool* pool, void* ptr) {
     if (pool->available < POOL_CAPACITY) {
-        memset(ptr, 0, BUFFER_SIZE);
+        memset(ptr, 0, pool->buffer_size);
         pool->ptrs[pool->available++] = ptr;
         return;
     }
@@ -49,7 +50,7 @@ void pool_put(Pool* pool, void* ptr) {
 
 int main(void) {
     Pool pool = {0};
-    pool_init(&pool);
+    pool_init(&pool, 1024);
 
     void* ptr = pool_get(&pool);
     strcpy(ptr, "Hello World!");
