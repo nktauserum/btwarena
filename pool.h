@@ -5,9 +5,7 @@
 #include <string.h>
 #include <limits.h>
 
-#ifndef POOL_CAPACITY
-    #define POOL_CAPACITY 16
-#endif // POOL_CAPACITY
+#define POOL_CAPACITY 16
 
 #ifndef BUFFER_SIZE 
     #error "Error: buffer size is not defined"
