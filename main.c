@@ -20,8 +20,7 @@ void pool_init(Pool* pool) {
 void* pool_get(Pool* pool) {
     for (int offset = 0; offset < sizeof(pool->bitmap) * CHAR_BIT; ++offset) {
         if ((pool->bitmap & (1u << offset)) != 0) {
-            pool->bitmap = pool->bitmap ^ (1u << offset); // Invert the bit
-            printf("GET bit #%d\n", offset);
+            pool->bitmap = pool->bitmap ^ (1u << offset); // XOR the bit - set as false
             return &pool->arena[offset * BUFFER_SIZE];
         }
     }
@@ -30,11 +29,11 @@ void* pool_get(Pool* pool) {
 }
 
 void pool_put(Pool* pool, void* ptr) {
-    int offset = ((char*)ptr - &pool->arena[0]) / BUFFER_SIZE;
-    if (offset < 0 || offset >= POOL_CAPACITY) return; // decline if ptr perhaps isn't in the arena
+    int offset = ((char*)ptr - &pool->arena[0]) / BUFFER_SIZE; // a little **magic** of pointer arithmetic
+    if (offset < 0 || offset >= POOL_CAPACITY) return; // decline if ptr is possibly not within the arena
 
-    pool->bitmap |= (1 << offset); // Invert - set as free
-    memset(ptr, 0, BUFFER_SIZE);
+    pool->bitmap |= (1u << offset); // set as true (always)
+    memset(ptr, 0, BUFFER_SIZE); // clear given buffr
 }
 
 void print_bitmap(Pool* pool) {
@@ -50,7 +49,6 @@ int main(void) {
     pool_init(&pool);
 
     void* ptr = pool_get(&pool);
-    print_bitmap(&pool);
     pool_put(&pool, ptr);
 
     void* ptr1 = pool_get(&pool);
