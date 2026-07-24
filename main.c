@@ -11,6 +11,17 @@ typedef struct {
     size_t available;
 } Pool;
 
+void pool_init(Pool* pool) {
+    pool->available = 0;
+
+    for (int i = 0; i < POOL_CAPACITY; ++i) {
+        void* buf = malloc(BUFFER_SIZE);
+        if (buf) {
+            pool->ptrs[pool->available++] = buf;
+        }
+    }
+}
+
 void* pool_get(Pool* pool) {
     if (pool->available > 0) {
         void* ptr = pool->ptrs[--pool->available];
