@@ -14,11 +14,12 @@ typedef struct {
 
 void pool_init(Pool* pool) {
     pool->bitmap = ~0; // all fields are available
+    memset(&pool->arena[0], 0, POOL_CAPACITY * BUFFER_SIZE);
 }
 
 void* pool_get(Pool* pool) {
     for (int offset = 0; offset < sizeof(pool->bitmap) * CHAR_BIT; ++offset) {
-        int bit_offset = offset % sizeof(pool->bitmap) * CHAR_BIT;
+        int bit_offset = sizeof(pool->bitmap) * CHAR_BIT;
         bool bit = pool->bitmap & (1 << bit_offset); // get the bit with specified offset
 
         if (bit != 0) {
@@ -32,13 +33,19 @@ void* pool_get(Pool* pool) {
 
 void pool_put(Pool* pool, void* ptr) {
     int offset = ((char*)ptr - &pool->arena[0]) / BUFFER_SIZE;
-    pool->bitmap = pool->bitmap ^ (1 << offset % (sizeof(pool->bitmap) * CHAR_BIT));
+    if (offset < 0 || offset >= POOL_CAPACITY) return; // decline if ptr perhaps isn't in the arena
+
+    int bit_offset = sizeof(pool->bitmap) * CHAR_BIT;
+    bool bit = pool->bitmap & (1 << bit_offset);
+    if (bit != 0) return; // double-free
+
+    pool->bitmap = pool->bitmap ^ (1 << bit_offset); // Invert - set as free
     memset(ptr, 0, BUFFER_SIZE);
 }
 
 void print_bitmap(Pool* pool) {
     for (int offset = 0; offset < sizeof(pool->bitmap) * CHAR_BIT; ++offset) {
-        char bit = pool->bitmap & (1 << offset % sizeof(pool->bitmap) * CHAR_BIT) ? '1' : '0';
+        char bit = pool->bitmap & (1 << sizeof(pool->bitmap) * CHAR_BIT) ? '1' : '0';
         putc(bit, stdout);
     }
     putc('\n', stdout);
