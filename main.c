@@ -1,66 +1,58 @@
-#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
-
+#include <limits.h>
 #include <string.h>
 
 #define POOL_CAPACITY 16
+#define BUFFER_SIZE 1024
 
 typedef struct {
-    void* ptrs[POOL_CAPACITY];
-    size_t available;
-    size_t buffer_size;
+    uint16_t bitmap;
+    char arena[POOL_CAPACITY * BUFFER_SIZE];
 } Pool;
 
-void pool_init(Pool* pool, size_t buffer_size) {
-    pool->available = 0;
-    pool->buffer_size = buffer_size;
-
-    for (int i = 0; i < POOL_CAPACITY; ++i) {
-        void* buf = malloc(pool->buffer_size);
-        if (buf) {
-            pool->ptrs[pool->available++] = buf;
-        }
-    }
-}
-
-void pool_destroy(Pool* pool) {
-    while (pool->available != 0) {
-        free(pool->ptrs[pool->available--]);
-    }
+void pool_init(Pool* pool) {
+    pool->bitmap = ~0; // all fields are available
 }
 
 void* pool_get(Pool* pool) {
-    if (pool->available > 0) {
-        void* ptr = pool->ptrs[--pool->available];
-        return ptr;
+    for (int offset = 0; offset < sizeof(pool->bitmap) * CHAR_BIT; ++offset) {
+        int bit_offset = offset % sizeof(pool->bitmap) * CHAR_BIT;
+        bool bit = pool->bitmap & (1 << bit_offset); // get the bit with specified offset
+
+        if (bit != 0) {
+            pool->bitmap = pool->bitmap ^ (1 << bit_offset); // Invert the bit
+            return &pool->arena[offset * BUFFER_SIZE];
+        }
     }
 
-    return malloc(pool->buffer_size);
+    return NULL;
 }
 
 void pool_put(Pool* pool, void* ptr) {
-    if (pool->available < POOL_CAPACITY) {
-        memset(ptr, 0, pool->buffer_size);
-        pool->ptrs[pool->available++] = ptr;
-        return;
-    }
+    int offset = ((char*)ptr - &pool->arena[0]) / BUFFER_SIZE;
+    pool->bitmap = pool->bitmap ^ (1 << offset % (sizeof(pool->bitmap) * CHAR_BIT));
+    memset(ptr, 0, BUFFER_SIZE);
+}
 
-    free(ptr);
+void print_bitmap(Pool* pool) {
+    for (int offset = 0; offset < sizeof(pool->bitmap) * CHAR_BIT; ++offset) {
+        char bit = pool->bitmap & (1 << offset % sizeof(pool->bitmap) * CHAR_BIT) ? '1' : '0';
+        putc(bit, stdout);
+    }
+    putc('\n', stdout);
 }
 
 int main(void) {
     Pool pool = {0};
-    pool_init(&pool, 1024);
+    pool_init(&pool);
 
     void* ptr = pool_get(&pool);
-    strcpy(ptr, "Hello World!");
     pool_put(&pool, ptr);
-    printf("Available: %lu\n", pool.available);
 
     void* ptr1 = pool_get(&pool);
-    printf("Available: %lu\n", pool.available);
-    pool_destroy(&pool);
-    printf("Available: %lu\n", pool.available);
+    pool_put(&pool, ptr1);
 
     return 0;
 }
