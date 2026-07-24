@@ -33,6 +33,7 @@ void* pool_get(Pool* pool) {
 
 void pool_put(Pool* pool, void* ptr) {
     if (pool->available < POOL_CAPACITY) {
+        memset(ptr, 0, BUFFER_SIZE);
         pool->ptrs[pool->available++] = ptr;
         return;
     }
@@ -48,7 +49,6 @@ int main(void) {
     pool_put(&pool, ptr);
 
     void* ptr1 = pool_get(&pool);
-    printf("ptr1: %s\n", (char*)ptr1); // prints "Hello World!"
 
     return 0;
 }
