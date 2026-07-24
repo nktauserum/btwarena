@@ -22,6 +22,12 @@ void pool_init(Pool* pool) {
     }
 }
 
+void pool_destroy(Pool* pool) {
+    while (pool->available != 0) {
+        free(pool->ptrs[pool->available--]);
+    }
+}
+
 void* pool_get(Pool* pool) {
     if (pool->available > 0) {
         void* ptr = pool->ptrs[--pool->available];
@@ -48,8 +54,12 @@ int main(void) {
     void* ptr = pool_get(&pool);
     strcpy(ptr, "Hello World!");
     pool_put(&pool, ptr);
+    printf("Available: %lu\n", pool.available);
 
     void* ptr1 = pool_get(&pool);
+    printf("Available: %lu\n", pool.available);
+    pool_destroy(&pool);
+    printf("Available: %lu\n", pool.available);
 
     return 0;
 }
