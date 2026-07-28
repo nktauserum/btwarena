@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BUFFER_SIZE 1024
+#define SIZE 1024
+#define CAPACITY 16
 #include "pool.h"
 
 void print_bitmap(Pool* pool) {
@@ -14,7 +15,7 @@ void print_bitmap(Pool* pool) {
 
 int main(void) {
     Pool pool = {0}; // initialize the pool
-    pool_init(&pool);
+    pool_init(&pool, CAPACITY, SIZE);
 
     void* ptr = pool_get(&pool); // alloc
 
