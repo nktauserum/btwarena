@@ -43,4 +43,9 @@ void pool_put(Pool* pool, void* ptr) {
     memset(ptr, 0, pool->size); // clear given buffr
 }
 
+void pool_destroy(Pool* pool) {
+    free(pool->arena);
+    free(pool->bitmap);
+}
+
 #endif // _POOL_H

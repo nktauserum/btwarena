@@ -40,5 +40,7 @@ int main(void) {
     void* nullptr = pool_get(&pool);
     printf("And the next allocation will give us NULL-pointer (%p)\n", nullptr);
 
+    pool_destroy(&pool);
+
     return 0;
 }
