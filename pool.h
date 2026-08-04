@@ -39,7 +39,7 @@ void pool_put(Pool* pool, void* ptr) {
     int offset = ((char*)ptr - pool->arena) / pool->size; // a little **magic** of pointer arithmetic
     if (offset < 0 || offset >= pool->count) return; // decline if ptr is possibly not within the arena
 
-    pool->bitmap[offset/CHAR_BIT] |= (1u << offset&CHAR_BIT); // set as true (always)
+    pool->bitmap[offset/CHAR_BIT] |= (1u << offset%CHAR_BIT); // set as true (always)
     memset(ptr, 0, pool->size); // clear given buffr
 }
 
