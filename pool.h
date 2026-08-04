@@ -7,24 +7,27 @@
 #include <limits.h>
 
 typedef struct {
-    uint16_t bitmap;
+    uint8_t* bitmap;
     size_t size, count; // count tells us how many buffers is in the pool, size - what size is each buffer 
     char* arena;
 } Pool;
 
 void pool_init(Pool* pool, size_t count, size_t size) {
-    pool->count = count < 8 ? 8 : count;
+    pool->count = count;
     pool->size = size;
-    
-    pool->bitmap = ~0; // all fields are available
+ 
+    int blocks_count = (size + 8 - 1) / 8 * 8; 
+    pool->bitmap = (uint8_t*)malloc(blocks_count*sizeof(uint8_t));
+    memset(pool->bitmap, ~0, blocks_count*sizeof(uint8_t));
+
     pool->arena = (char*)malloc(count*size);         
     memset(pool->arena, 0, count * size);
 }
 
 void* pool_get(Pool* pool) {
-    for (int offset = 0; offset < sizeof(pool->bitmap) * CHAR_BIT; ++offset) {
-        if ((pool->bitmap & (1u << offset)) != 0) {
-            pool->bitmap = pool->bitmap ^ (1u << offset); // XOR the bit - set as false
+    for (int offset = 0; offset < pool->count; ++offset) {
+        if ((pool->bitmap[offset/CHAR_BIT] & (1u << offset%CHAR_BIT)) != 0) {
+            pool->bitmap[offset/CHAR_BIT] = pool->bitmap[offset/CHAR_BIT] ^ (1u << offset%CHAR_BIT); // XOR the bit - set as false
             return &pool->arena[offset * pool->size];
         }
     }
@@ -36,7 +39,7 @@ void pool_put(Pool* pool, void* ptr) {
     int offset = ((char*)ptr - pool->arena) / pool->size; // a little **magic** of pointer arithmetic
     if (offset < 0 || offset >= pool->count) return; // decline if ptr is possibly not within the arena
 
-    pool->bitmap |= (1u << offset); // set as true (always)
+    pool->bitmap[offset/CHAR_BIT] |= (1u << offset&CHAR_BIT); // set as true (always)
     memset(ptr, 0, pool->size); // clear given buffr
 }
 

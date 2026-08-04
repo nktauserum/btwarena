@@ -6,8 +6,8 @@
 #include "pool.h"
 
 void print_bitmap(Pool* pool) {
-    for (int offset = 0; offset < sizeof(pool->bitmap) * CHAR_BIT; ++offset) {
-        char bit = pool->bitmap & (1 << offset) ? '1' : '0';
+    for (int offset = 0; offset < pool->count; ++offset) {
+        char bit = pool->bitmap[offset/CHAR_BIT] & (1 << offset%CHAR_BIT) ? '1' : '0';
         putc(bit, stdout);
     }
     putc('\n', stdout);
