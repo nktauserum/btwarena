@@ -31,5 +31,14 @@ int main(void) {
     printf("Wonderful! On the second allocation we got a block with the same address: %p\n", ptr1);
     pool_put(&pool, ptr1);
 
+    for (int i = 0; i < CAPACITY; ++i) 
+        pool_get(&pool);
+    
+    printf("We've allocated all memory. Now there are no free blocks: ");
+    print_bitmap(&pool);
+
+    void* nullptr = pool_get(&pool);
+    printf("And the next allocation will give us NULL-pointer (%p)\n", nullptr);
+
     return 0;
 }
